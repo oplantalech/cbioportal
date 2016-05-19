@@ -22,18 +22,13 @@
 
 package org.mskcc.cbio.portal.scripts;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.PrintStream;
-import java.security.Permission;
 
-import org.junit.Before;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
-import org.mskcc.cbio.portal.util.SpringUtil;
 
 import static org.junit.Assert.*;
 import static org.junit.Assume.*;
@@ -52,92 +47,10 @@ import org.springframework.test.context.transaction.TransactionConfiguration;
 @Transactional
 public class TestDumpPortalInfo {
 
-    // exit status codes for the script
-    private static final int EX_USAGE = 64;
-    private static final int EX_IOERR = 74;
-
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
     @Rule
     public final TemporaryFolder tempFolder = new TemporaryFolder();
-
-    // TODO: use ExpectedSystemExit and SystemErrRule from the package
-    // system-rules (org.junit.contrib.java.lang.system) if cBioPortal
-    // updates JUnit to 4.9+
-
-    private PrintStream origSystemErr;
-    protected ByteArrayOutputStream systemErrStream;
-
-    private SecurityManager origSecurityManager;
-
-    /**
-     * Security manager to throw an exception when System.exit() is called.
-     */
-    private static class NoExitSecurityManager extends SecurityManager {
-        @Override
-        public void checkExit(int status) {
-            throw new ExitException(status);
-        }
-        // allow everything else
-        @Override
-        public void checkPermission(Permission perm) {};
-        @Override
-        public void checkPermission(Permission perm, Object context) {};
-    }
-
-    /**
-     * Exception to be thrown instead of exiting when System.exit() is called
-     */
-    protected static class ExitException extends SecurityException {
-
-        private final int status;
-
-        /**
-         * Instantiate an ExitException for a call with the given exit status
-         *
-         * @param status  the exit status code
-         */
-        public ExitException(int status) 
-        {
-            super("System.exit() was called with status " + status);
-            this.status = status;
-        }
-
-        /**
-         * Return the exit status with which System.exit() was called
-         *
-         * @return the exit status
-         */
-        public int getStatus() {
-            return status;
-        }
-    }
-
-    /**
-     * Adjust System to throw on exit and keep track of standard error output
-     * 
-     * Calls to System.exit() will result in an ExitException (set with the
-     * exit status) and anything written to System.err will instead be stored
-     * in systemErrStream for use in tests, until tearDown is called.
-     */
-    @Before
-    public void setUp() {
-        // set the security manager to raise an exception on System.exit()
-        origSecurityManager = System.getSecurityManager();
-        System.setSecurityManager(new NoExitSecurityManager());
-        // replace
-        systemErrStream = new ByteArrayOutputStream();
-        origSystemErr = System.err;
-        System.setErr(new PrintStream(systemErrStream));
-    }
-
-    /**
-     * Restore the environment to before setUp() was called
-     */
-    @After
-    public void tearDown() {
-        System.setErr(origSystemErr);
-        systemErrStream = null;
-        System.setSecurityManager(origSecurityManager);
-    }
 
     /**
      * Test if the output is properly written on basic usage
@@ -175,21 +88,10 @@ public class TestDumpPortalInfo {
      */
     @Test
     public void testNoArgs() throws Exception {
-        boolean exitWasCalled = false;
+        exception.expect(UsageException.class);
+        exception.expectMessage("dumpPortalInfo");
         String[] args = {};
-        // catch exception if System.exit was called
-        try {
-            DumpPortalInfo.main(args);
-        } catch (ExitException e) {
-            exitWasCalled = true;
-            assertEquals(e.getStatus(), EX_USAGE);
-        }
-        assertTrue("Script did not call System.exit()", exitWasCalled);
-        assertTrue(
-                String.format(
-                        "No usage message was printed to standard error: %s",
-                        systemErrStream.toString()),
-                systemErrStream.toString().toLowerCase().contains( "usage:"));
+        Runnable runner = new DumpPortalInfo(args);
+        runner.run();
     }
-
 }
