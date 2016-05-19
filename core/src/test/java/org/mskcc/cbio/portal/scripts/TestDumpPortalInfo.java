@@ -64,7 +64,8 @@ public class TestDumpPortalInfo {
 
         // Run the script
         String[] args = {outDir.getPath()};
-        DumpPortalInfo.main(args);
+        Runnable runner = new DumpPortalInfo(args);
+        runner.run();
 
         // check if the output dir was created in the folder
         assertEquals(folder.list().length, 1);
