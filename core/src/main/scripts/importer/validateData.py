@@ -1180,7 +1180,7 @@ class MutationsExtendedValidator(Validator):
                 'recommended to make sure that the Uniprot canonical isoform '
                 'is used when drawing Pfam domains in the mutations view',
                 extra={'line_number': self.line_number,
-                       'cause':'blank value in SWISSPROT column'})
+                       'cause':'<blank>'})
             # no value to test, return without error
             return True
         if not re.match(
@@ -1192,13 +1192,15 @@ class MutationsExtendedValidator(Validator):
             self.extra = 'SWISSPROT value is not a UniprotKB accession'
             self.extra_exists = True
             return False
-        # test whether the accession is known to the portal
+        # test whether the accession is known to the portal, if available
         if (self.portal.uniprotkb_entry_map is not None and
                 value not in self.portal.uniprotkb_entry_map):
-            # return this as an error
-            self.extra = 'This UniprotKB accession is not known to the portal'
-            self.extra_exists = True
-            return False
+            self.logger.warning(
+                'This UniprotKB/Swissprot accession is not known to the '
+                'portal, the portal will attempt to display the protein '
+                'based on the gene',
+                extra={'line_number': self.line_number,
+                       'cause': value})
         # if no reasons to return with a message were found, return valid
         return True
 

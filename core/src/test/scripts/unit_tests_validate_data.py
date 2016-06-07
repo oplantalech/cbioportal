@@ -731,7 +731,7 @@ class MutationsSpecialCasesTestCase(PostClinicalDataFileTestCase):
 
     def test_unknown_or_invalid_swissprot(self):
         """Test errors for invalid and unknown accessions under SWISSPROT."""
-        self.logger.setLevel(logging.ERROR)
+        self.logger.setLevel(logging.WARNING)
         record_list = self.validate(
                 'mutations/data_mutations_invalid_swissprot.maf',
                 validateData.MutationsExtendedValidator)
@@ -751,7 +751,7 @@ class MutationsSpecialCasesTestCase(PostClinicalDataFileTestCase):
         self.assertNotIn('portal', record.getMessage().lower())
         # valid but non-existing accession
         record = record_iterator.next()
-        self.assertEqual(record.levelno, logging.ERROR)
+        self.assertEqual(record.levelno, logging.WARNING)
         self.assertEqual(record.line_number, 8)
         self.assertEqual(record.cause, 'Z9ZZZ9ZZZ9')
         self.assertIn('portal', record.getMessage().lower())
