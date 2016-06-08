@@ -690,7 +690,8 @@ class MutationsSpecialCasesTestCase(PostClinicalDataFileTestCase):
                                         'TCGA-BH-A18P-11, '
                                         'TCGA-C8-A138-10'
                                         'TCGA-A2-A0EY-10,'
-                                        ''})  # TCGA-A8-A08G-10
+                                        '',  # TCGA-A8-A08G-10
+                                     'swissprot_identifier': 'accession'})
         # we expect 2 errors about invalid normal samples
         self.assertEqual(len(record_list), 2)
         # check if both messages come from printDataInvalidStatement:
@@ -708,7 +709,9 @@ class MutationsSpecialCasesTestCase(PostClinicalDataFileTestCase):
         # set level according to this test case:
         self.logger.setLevel(logging.ERROR)
         record_list = self.validate('mutations/data_mutations_missing_aa_change_column.maf',
-                                    validateData.MutationsExtendedValidator)
+                                    validateData.MutationsExtendedValidator,
+                                    extra_meta_fields={
+                                        'swissprot_identifier': 'accession'})
         # we expect 2 errors, something like:
         # ERROR: data_mutations_missing_aa_change_column.maf: line 1: At least one of the columns HGVSp_Short or Amino_Acid_Change needs to be present.
         # ERROR: data_mutations_missing_aa_change_column.maf: Invalid column header, file cannot be parsed
@@ -727,14 +730,17 @@ class MutationsSpecialCasesTestCase(PostClinicalDataFileTestCase):
         # WARNING: data_mutations_missing_swissprot.maf: line 1: SWISSPROT column is recommended if you want to make sure that a specific isoform is used for the PFAM domains drawing in the mutations view.; wrong value: 'SWISSPROT column not found'
         self.assertEqual(len(record_list), 1)
         # check if both messages come from printDataInvalidStatement:
-        self.assertIn("swissprot", record_list[0].getMessage().lower())
+        self.assertIn("swissprot column is recommended",
+                      record_list[0].getMessage().lower())
 
     def test_unknown_or_invalid_swissprot(self):
         """Test errors for invalid and unknown accessions under SWISSPROT."""
         self.logger.setLevel(logging.WARNING)
         record_list = self.validate(
                 'mutations/data_mutations_invalid_swissprot.maf',
-                validateData.MutationsExtendedValidator)
+                validateData.MutationsExtendedValidator,
+                extra_meta_fields={
+                    'swissprot_identifier': 'accession'})
         self.assertEqual(len(record_list), 3)
         record_iterator = iter(record_list)
         # used a name instead of an accession
@@ -749,19 +755,94 @@ class MutationsSpecialCasesTestCase(PostClinicalDataFileTestCase):
         self.assertEqual(record.line_number, 5)
         self.assertEqual(record.cause, 'P99999,Z9ZZZ9ZZZ9')
         self.assertNotIn('portal', record.getMessage().lower())
-        # valid but non-existing accession
+        # syntactically valid but non-existing accession
         record = record_iterator.next()
         self.assertEqual(record.levelno, logging.WARNING)
         self.assertEqual(record.line_number, 8)
         self.assertEqual(record.cause, 'Z9ZZZ9ZZZ9')
         self.assertIn('portal', record.getMessage().lower())
 
+    def test_name_as_swissprot_identifier(self):
+        """Test if the SWISSPROT column is parsed as a name if meta says so."""
+        self.logger.setLevel(logging.WARNING)
+        record_list = self.validate(
+                'mutations/data_mutations_name_swissprot.maf',
+                validateData.MutationsExtendedValidator,
+                extra_meta_fields={'swissprot_identifier': 'name'})
+        self.assertEqual(len(record_list), 3)
+        record_iterator = iter(record_list)
+        # used an accession instead of a name
+        record = record_iterator.next()
+        self.assertEqual(record.levelno, logging.ERROR)
+        self.assertEqual(record.line_number, 3)
+        self.assertEqual(record.cause, 'Q9NQ94')
+        self.assertNotIn('portal', record.getMessage().lower())
+        # neither a name nor an accession
+        record = record_iterator.next()
+        self.assertEqual(record.levelno, logging.ERROR)
+        self.assertEqual(record.line_number, 5)
+        self.assertEqual(record.cause, 'A1CF_HUMAN,HBB_YEAST')
+        self.assertNotIn('portal', record.getMessage().lower())
+        # syntactically valid but non-existing name
+        record = record_iterator.next()
+        self.assertEqual(record.levelno, logging.WARNING)
+        self.assertEqual(record.line_number, 8)
+        self.assertEqual(record.cause, 'HBB_YEAST')
+        self.assertIn('portal', record.getMessage().lower())
+
+    def test_implicit_name_as_swissprot_identifier(self):
+        """Test if the SWISSPROT column is parsed as a name if unspecified."""
+        self.logger.setLevel(logging.WARNING)
+        record_list = self.validate(
+                'mutations/data_mutations_name_swissprot.maf',
+                validateData.MutationsExtendedValidator)
+        self.assertEqual(len(record_list), 4)
+        record_iterator = iter(record_list)
+        # warning about the implicit Swiss-Prot identifier type
+        record = record_iterator.next()
+        self.assertEqual(record.levelno, logging.WARNING)
+        self.assertIn('swissprot_identifier', record.getMessage())
+        # used an accession instead of a name
+        record = record_iterator.next()
+        self.assertEqual(record.levelno, logging.ERROR)
+        self.assertEqual(record.line_number, 3)
+        self.assertEqual(record.cause, 'Q9NQ94')
+        self.assertNotIn('portal', record.getMessage().lower())
+        # neither a name nor an accession
+        record = record_iterator.next()
+        self.assertEqual(record.levelno, logging.ERROR)
+        self.assertEqual(record.line_number, 5)
+        self.assertEqual(record.cause, 'A1CF_HUMAN,HBB_YEAST')
+        self.assertNotIn('portal', record.getMessage().lower())
+        # syntactically valid but non-existing name
+        record = record_iterator.next()
+        self.assertEqual(record.levelno, logging.WARNING)
+        self.assertEqual(record.line_number, 8)
+        self.assertEqual(record.cause, 'HBB_YEAST')
+        self.assertIn('portal', record.getMessage().lower())
+
+    def test_invalid_swissprot_identifier_type(self):
+        """Test if the validator rejects files with nonsensical id types."""
+        self.logger.setLevel(logging.ERROR)
+        mvals, mtype = validateData.cbioportal_common.parse_metadata_file(
+                'test_data/mutations/meta_mutations_invalid_swissprot_idspec.txt',
+                self.logger,
+                study_id='spam')
+        record_list = self.get_log_records()
+        self.assertEqual(len(record_list), 1)
+        record = record_list.pop()
+        self.assertEqual(record.levelno, logging.ERROR)
+        self.assertEqual(record.cause, 'namelessly')
+        self.assertIsNone(mtype, 'metadata file was not rejected as invalid')
+
     def test_isValidAminoAcidChange(self):
         """Tests if proper warning is given if aa change column is present, but contains wrong (blank) value"""
         # set level according to this test case:
         self.logger.setLevel(logging.WARNING)
         record_list = self.validate('mutations/data_mutations_empty_aa_change_column.maf',
-                                    validateData.MutationsExtendedValidator)
+                                    validateData.MutationsExtendedValidator,
+                                    extra_meta_fields={
+                                        'swissprot_identifier': 'accession'})
         # we expect 1 warning, something like
         # WARNING: data_mutations_empty_aa_change_column.maf: line 2: Amino acid change cannot be parsed from Amino_Acid_Change column value. This mutation record will get a generic "MUTATED" flag; wrong value: 'empty value found'
         self.assertEqual(len(record_list), 2)
@@ -777,7 +858,9 @@ class MutationsSpecialCasesTestCase(PostClinicalDataFileTestCase):
         # set level according to this test case:
         self.logger.setLevel(logging.INFO)
         record_list = self.validate('mutations/data_mutations_some_silent.maf',
-                                    validateData.MutationsExtendedValidator)
+                                    validateData.MutationsExtendedValidator,
+                                    extra_meta_fields={
+                                        'swissprot_identifier': 'accession'})
         # we expect 5 infos: 3 about silent mutations, 2 general info messages:
         self.assertEqual(len(record_list), 5)
         # First 3 INFO messages should be something like: "Validation of line skipped due to cBioPortal's filtering. Filtered types:"
@@ -797,7 +880,9 @@ class MutationsSpecialCasesTestCase(PostClinicalDataFileTestCase):
         # set level according to this test case:
         self.logger.setLevel(logging.WARNING)
         record_list = self.validate('mutations/data_mutations_silent_alternative.maf',
-                                    validateData.MutationsExtendedValidator)
+                                    validateData.MutationsExtendedValidator,
+                                    extra_meta_fields={
+                                        'swissprot_identifier': 'accession'})
         # we expect 1 ERROR and 2 WARNINGs :
         self.assertEqual(len(record_list), 3)
 
