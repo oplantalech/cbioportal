@@ -60,6 +60,7 @@ public class ImportExtendedMutationData{
 
 	private File mutationFile;
 	private int geneticProfileId;
+	private boolean swissprotIsAccession;
 	private MutationFilter myMutationFilter;
 	private int entriesSkipped = 0;
 	private int samplesSkipped = 0;
@@ -73,10 +74,22 @@ public class ImportExtendedMutationData{
 	public ImportExtendedMutationData(File mutationFile, int geneticProfileId) {
 		this.mutationFile = mutationFile;
 		this.geneticProfileId = geneticProfileId;
+		this.swissprotIsAccession = false;
 
 		// create default MutationFilter
 		myMutationFilter = new MutationFilter( );
 	}
+
+    /**
+     * Turns parsing the SWISSPROT column as an accession on or off again.
+     *
+     * If off, the column will be parsed as the name (formerly ID).
+     *
+     * @param swissprotIsAccession  whether to parse the column as an accession
+     */
+    public void setSwissprotIsAccession(boolean swissprotIsAccession) {
+        this.swissprotIsAccession = swissprotIsAccession;
+    }
 
 	public void importData() throws IOException, DaoException {
 		MySQLbulkLoader.bulkLoadOn();
@@ -244,8 +257,13 @@ public class ImportExtendedMutationData{
 				aaChange = record.getAminoAcidChange();
 				codonChange = record.getCodons();
 				refseqMrnaId = record.getRefSeq();
-                uniprotAccession = record.getSwissprot();
-                uniprotName = DaoUniProtIdMapping.mapFromUniprotAccessionToUniprotId(uniprotAccession);
+                if (this.swissprotIsAccession) {
+                    uniprotAccession = record.getSwissprot();
+                    uniprotName = DaoUniProtIdMapping.mapFromUniprotAccessionToUniprotId(uniprotAccession);
+                } else {
+                    uniprotName = record.getSwissprot();
+                    uniprotAccession = DaoUniProtIdMapping.mapFromUniprotIdToAccession(uniprotName);
+                }
 				proteinPosStart = ExtendedMutationUtil.getProteinPosStart(
 						record.getProteinPosition(), proteinChange);
 				proteinPosEnd = ExtendedMutationUtil.getProteinPosEnd(
