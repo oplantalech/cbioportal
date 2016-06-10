@@ -225,7 +225,6 @@ public class ImportExtendedMutationData{
 					aaChange,
 					codonChange,
 					refseqMrnaId,
-					uniprotName,
 					uniprotAccession;
 
 				int proteinPosStart,
@@ -259,9 +258,8 @@ public class ImportExtendedMutationData{
 				refseqMrnaId = record.getRefSeq();
                 if (this.swissprotIsAccession) {
                     uniprotAccession = record.getSwissprot();
-                    uniprotName = DaoUniProtIdMapping.mapFromUniprotAccessionToUniprotId(uniprotAccession);
                 } else {
-                    uniprotName = record.getSwissprot();
+                    String uniprotName = record.getSwissprot();
                     uniprotAccession = DaoUniProtIdMapping.mapFromUniprotIdToAccession(uniprotName);
                 }
 				proteinPosStart = ExtendedMutationUtil.getProteinPosStart(
@@ -387,7 +385,6 @@ public class ImportExtendedMutationData{
 					// TODO rename the oncotator column names (remove "oncotator")
 					mutation.setOncotatorCodonChange(codonChange);
 					mutation.setOncotatorRefseqMrnaId(refseqMrnaId);
-					mutation.setOncotatorUniprotName(uniprotName);
 					mutation.setOncotatorUniprotAccession(uniprotAccession);
 					mutation.setOncotatorProteinPosStart(proteinPosStart);
 					mutation.setOncotatorProteinPosEnd(proteinPosEnd);
