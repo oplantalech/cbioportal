@@ -14,6 +14,7 @@ import org.mskcc.cbio.portal.model.DBClinicalPatientData;
 import org.mskcc.cbio.portal.model.DBClinicalSampleData;
 import org.mskcc.cbio.portal.model.DBGene;
 import org.mskcc.cbio.portal.model.DBGeneAlias;
+import org.mskcc.cbio.portal.model.DBUniprotKbEntry;
 import org.mskcc.cbio.portal.model.DBGeneticAltRow;
 import org.mskcc.cbio.portal.model.DBGeneticProfile;
 import org.mskcc.cbio.portal.model.DBAltCount;
@@ -31,6 +32,7 @@ import org.mskcc.cbio.portal.persistence.ClinicalDataMapper;
 import org.mskcc.cbio.portal.persistence.ClinicalFieldMapper;
 import org.mskcc.cbio.portal.persistence.GeneAliasMapper;
 import org.mskcc.cbio.portal.persistence.GeneMapper;
+import org.mskcc.cbio.portal.persistence.UniprotKbEntryMapper;
 import org.mskcc.cbio.portal.persistence.GeneticProfileMapper;
 import org.mskcc.cbio.portal.persistence.MutationMapper;
 import org.mskcc.cbio.portal.persistence.SampleListMapper;
@@ -61,6 +63,8 @@ public class ApiService {
 	private GeneMapper geneMapper;
 	@Autowired
 	private GeneAliasMapper geneAliasMapper;
+	@Autowired
+	private UniprotKbEntryMapper uniprotKbEntryMapper;
 	@Autowired
 	private GeneticProfileMapper geneticProfileMapper;
 	@Autowired
@@ -268,7 +272,22 @@ public class ApiService {
 	public List<DBGeneAlias> getGenesAliases(List<Long> entrez_gene_ids) {
 		return geneAliasMapper.getGenesAliasesByEntrez(entrez_gene_ids);
 	}
-	
+
+	@Transactional
+	public List<DBUniprotKbEntry> getUniprotKbEntries() {
+		return uniprotKbEntryMapper.getAllUniprotKbEntries();
+	}
+
+	@Transactional
+	public List<DBUniprotKbEntry> getUniprotKbEntries(List<String> accessions) {
+		return uniprotKbEntryMapper.getUniprotKbEntriesByAccession(accessions);
+	}
+
+	@Transactional
+	public List<DBUniprotKbEntry> getUniprotKbEntriesByGene(List<Long> entrez_gene_ids) {
+		return uniprotKbEntryMapper.getUniprotKbEntriesByEntrez(entrez_gene_ids);
+	}
+
 	@Transactional
 	public List<DBGeneticProfile> getGeneticProfiles() {
 		return geneticProfileMapper.getAllGeneticProfiles();
