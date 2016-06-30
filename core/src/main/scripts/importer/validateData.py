@@ -1227,10 +1227,10 @@ class ClinicalValidator(Validator):
         'DRIVER_MUTATIONS': {
             'is_patient_attribute': '0'
         },
-        'ERG-FUSION_ACGH': {
+        'ERG_FUSION_ACGH': {
             'is_patient_attribute': '0'
         },
-        'ETS/RAF/SPINK1_STATUS': {
+        'ETS_RAF_SPINK1_STATUS': {
             'is_patient_attribute': '0'
         },
         'GENDER': {
@@ -1295,7 +1295,7 @@ class ClinicalValidator(Validator):
             'is_patient_attribute': '1',
             'datatype': 'STRING'
         },
-        'TMPRSS2-ERG_FUSION_STATUS': {
+        'TMPRSS2_ERG_FUSION_STATUS': {
             'is_patient_attribute': '0'
         },
         'TUMOR_GRADE': {
