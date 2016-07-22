@@ -75,7 +75,7 @@ public class ImportGeneData extends ConsoleRunnable {
                     String parts[] = line.split("\t");
                     int taxonimy = Integer.parseInt(parts[0]);
                     if (taxonimy!=9606) {
-                        // only import human genes
+                        // only import mice genes
                         continue;
                     }
                     
@@ -276,6 +276,19 @@ public class ImportGeneData extends ConsoleRunnable {
         String genesNotFound = "";
         int genesNotFoundCount = 0;
         CanonicalGene currentGene = null;
+  /*      
+        HashMap<String, List<long[]>> geneLociMap = new HashMap<String, List<long[]>>();
+        
+        in loop...
+        lociList = geneLociMap.get(geneId);
+        if (lociList == null) {
+        	lociList = new List<long[]>();
+        	geneLociMap.put(geneId, lociList);
+        }
+        lociList.add()
+    */    
+        
+        
         List<long[]> loci = new ArrayList<long[]>();
         ProgressMonitor.setCurrentMessage("\n\nUpdating gene lengths: \n\n");
         while ((line=buf.readLine()) != null) {

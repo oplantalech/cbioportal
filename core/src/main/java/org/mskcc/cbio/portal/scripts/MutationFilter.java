@@ -104,7 +104,7 @@ public class MutationFilter {
          +------------------------+
        */
       
-      // Do not accept mutations with Mutation_Status of None
+      // Do not accept mutations with Mutation_Status of None  //GERMLINE?
       if (safeStringTest( mutation.getMutationStatus(), "None" )) {
           mutationStatusNoneRejects++;
           return false;
