@@ -32,15 +32,16 @@
 
 package org.mskcc.cbio.portal.scripts;
 
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-
 import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mskcc.cbio.portal.dao.DaoGeneOptimized;
 import org.mskcc.cbio.portal.model.CanonicalGene;
 import org.mskcc.cbio.portal.util.ProgressMonitor;
@@ -99,5 +100,17 @@ public class TestImportGeneData {
         else {
             throw new IllegalArgumentException("Cannot find test gene file, is PORTAL_HOME set?");
         }
+    }
+    
+    @Test
+    public void testCalculateGeneLength() {
+    	
+    	List<long[]> loci = new ArrayList<long[]>();
+    	long[] values = {0,10};
+    	loci.add(values);
+    	long[] values2 = {15,12};
+    	loci.add(values2);
+    	int geneLength = ImportGeneData.calculateGeneLength(loci);
+    	assertEquals(100, geneLength);
     }
 }

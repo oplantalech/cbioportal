@@ -74,7 +74,7 @@ public class ImportGeneData extends ConsoleRunnable {
                 
                     String parts[] = line.split("\t");
                     int taxonimy = Integer.parseInt(parts[0]);
-                    if (taxonimy!=9606) {
+                    if (taxonimy!=10090) {
                         // only import mice genes
                         continue;
                     }
@@ -96,10 +96,10 @@ public class ImportGeneData extends ConsoleRunnable {
                         aliases.addAll(Arrays.asList(strAliases.split("\\|")));
                     }
                     
-                    if (geneSymbol.startsWith("MIR") && type.equalsIgnoreCase("miscRNA")) {
-                        line = buf.readLine();
-                        continue; // ignore miRNA; process seperately
-                    }
+                    //if (geneSymbol.startsWith("MIR") && type.equalsIgnoreCase("miscRNA")) {
+                      //  line = buf.readLine();
+                      //  continue; // ignore miRNA; process seperately
+                    //}
                     
                     CanonicalGene gene = null;
                     if (!mainSymbol.equals("-")) {
@@ -268,70 +268,62 @@ public class ImportGeneData extends ConsoleRunnable {
         ProgressMonitor.logWarning(sb.toString());
     }
 
+    /**
+     * This method imports the gene lengths of the file stated. This file must be an "exon-loci" file (bed file).
+     * 
+     * @param geneFile
+     * @throws IOException
+     * @throws DaoException
+     */
     private static void importGeneLength(File geneFile) throws IOException, DaoException {
+    	//Set the variables needed for the method
         DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
         FileReader reader = new FileReader(geneFile);
         BufferedReader buf = new BufferedReader(reader);
         String line;
-        String genesNotFound = "";
-        int genesNotFoundCount = 0;
-        CanonicalGene currentGene = null;
-  /*      
-        HashMap<String, List<long[]>> geneLociMap = new HashMap<String, List<long[]>>();
+        HashMap<Long, ArrayList<long[]>> geneLociMap = new HashMap<Long, ArrayList<long[]>>();
+        ProgressMonitor.setCurrentMessage("\n\nUpdating gene lengths (new): \n\n"); //Display a message in the console
         
-        in loop...
-        lociList = geneLociMap.get(geneId);
-        if (lociList == null) {
-        	lociList = new List<long[]>();
-        	geneLociMap.put(geneId, lociList);
-        }
-        lociList.add()
-    */    
-        
-        
-        List<long[]> loci = new ArrayList<long[]>();
-        ProgressMonitor.setCurrentMessage("\n\nUpdating gene lengths: \n\n");
+        //Iterate over the file and fill the hash map with the max and min values of each gene (start and end position)
         while ((line=buf.readLine()) != null) {
-            if (!line.startsWith("#")) {
-                String parts[] = line.split("\t");
-                CanonicalGene gene = daoGeneOptimized.getNonAmbiguousGene(parts[3], parts[0]);
-                if (gene==null) {
-                    genesNotFoundCount++;
-                    if (genesNotFoundCount <= 3) { 
-                        genesNotFound += parts[3] + ", ";
-                    }
-                    else if (genesNotFoundCount == 4) {
-                        genesNotFound += "...";
-                    }
-                    continue;
-                }
-                
-                if (currentGene != gene) {
-                    if (currentGene!=null) {
-                        int length = calculateGeneLength(loci);
-                        if (currentGene.getLength()!=0) {
-                            //TODO - use a map<gene,loci> to fix this
-                            ProgressMonitor.logWarning(currentGene.getHugoGeneSymbolAllCaps()+" has multiple length.");
-                        } else {
-                            currentGene.setLength(length);
-                            //update gene:
-                            daoGeneOptimized.updateGene(currentGene);
-                        }
-                    }
-                    loci.clear();
-                    currentGene = gene;
-                }
-                
-                loci.add(new long[]{Long.parseLong(parts[1]), Long.parseLong(parts[2])});
+        	String parts[] = line.split("\t");
+            CanonicalGene gene = daoGeneOptimized.getNonAmbiguousGene(parts[3], parts[0]); //Identify unambiguously the gene (with the symbol and the chromosome)
+        	if (gene==null) { //Report the genes that have not been unambiguously identified
+        		System.err.println("Could not find non ambiguous gene: "+parts[3]);
+                continue;
             }
+        	else {
+        		Long geneId = gene.getEntrezGeneId(); //Retrieve the Entrez Gene ID from gene
+        		ArrayList<long[]> list = geneLociMap.get(geneId);
+        		if (list == null) {
+        			list = new ArrayList<long[]>(); //Create new array
+        			geneLociMap.put(geneId, list); //couple it to the geneId
+        		}
+        		list.add(new long[]{Long.parseLong(parts[1]), Long.parseLong(parts[2])}); //Add the new positions
+
+        	}
         }
-        if (genesNotFound.length() > 0) {
-            ProgressMonitor.logWarning("Could not find non ambiguous gene(s): " + genesNotFound);
-        }
-            
-    }
+        
+        //Calculate the length for each gene and update genes
+        for (Long key : geneLociMap.keySet()) { //Get the keys and iterate over them
+        	ArrayList<long[]> exons = geneLociMap.get(key); //Get the values
+        	int length = calculateGeneLength(exons);
+        	CanonicalGene gene = daoGeneOptimized.getGene(key);
+        	gene.setLength(length);
+            daoGeneOptimized.updateGene(gene); 
+            }
+      }
     
-    private static int calculateGeneLength(List<long[]> loci) {
+
+    /**
+     * This method uses a list of exon loci from the same gene and it adds the length of all of them to get the gene length. If some of the exons are
+     * overlapping, the overlapping part is only counted once in the calculation. For example, if an exon goes from position 3 to 10 and another one from 
+     * position 5 to 11, when calculating the length these exons would be considered as a single exon going from position 3 to 11.
+     * 
+     * @param loci
+     * @return
+     */
+    public static int calculateGeneLength(List<long[]> loci) {
         long min = Long.MAX_VALUE, max=-1;
         for (long[] l : loci) {
             if (l[0]<min) {
@@ -341,6 +333,8 @@ public class ImportGeneData extends ConsoleRunnable {
                 max = l[1];
             }
         }
+        if (max < min)
+        	throw new IllegalArgumentException("Found error: max=" + max + ", min=" + min);
         BitSet bitSet = new BitSet((int)(max-min));
         for (long[] l : loci) {
             bitSet.set((int)(l[0]-min), ((int)(l[1]-min)));
@@ -420,6 +414,7 @@ public class ImportGeneData extends ConsoleRunnable {
 	        ProgressMonitor.setMaxValue(numLines);
 	        MySQLbulkLoader.bulkLoadOn();
 	        ImportGeneData.importData(geneFile);
+	        MySQLbulkLoader.flushAll(); //Gene and gene_alias should be updated before calculating gene length (exon-loci)!
 	        
 	        if(options.has("supp-genes")) {
 	            File suppGeneFile = new File((String) options.valueOf("genes"));

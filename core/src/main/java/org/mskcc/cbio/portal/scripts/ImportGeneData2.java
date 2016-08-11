@@ -81,10 +81,10 @@ public class ImportGeneData2 {
                         aliases.addAll(Arrays.asList(strAliases.split("\\|")));
                     }
                     
-                    if (geneSymbol.startsWith("MIR") && type.equalsIgnoreCase("miscRNA")) {
-                        line = buf.readLine();
-                        continue; // ignore miRNA; process seperately SHOULD CHECK IF IN MICE HAPPENS THE SAME
-                    }
+                    //if (geneSymbol.startsWith("MIR") && type.equalsIgnoreCase("miscRNA")) {
+                    //    line = buf.readLine();
+                    //    continue; // ignore miRNA; process seperately THIS IS NOT DOING ANYTHING - TODO: CHECK miRNA NOTATION IN MOUSE
+                    //}
                     
                     CanonicalGene gene = null;
                     if (!mainSymbol.equals("-")) {

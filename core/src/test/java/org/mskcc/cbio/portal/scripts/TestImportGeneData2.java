@@ -35,6 +35,7 @@ package org.mskcc.cbio.portal.scripts;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mskcc.cbio.portal.util.ConsoleUtil;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TransactionConfiguration;
@@ -59,11 +60,11 @@ public class TestImportGeneData2 {
     @Test
     public void testImportGeneData() throws Exception {
     	String[] args = {
-                "--genes","src/test/resources/humangenes/Homo_sapiens.gene_info",
-                "--exon-loci","src/test/resources/humangenes/all_exon_loci_human.bed"
+                "--genes","src/test/resources/mousegenes/Mus_musculus.gene_info",
+                "--exon-loci","src/test/resources/mousegenes/all_exon_loci.bed"
         };
     	ImportGeneData runner = new ImportGeneData(args);
         runner.run();
-    	
+    	ConsoleUtil.showMessages();
     }
 }
