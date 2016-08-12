@@ -96,10 +96,10 @@ public class ImportGeneData extends ConsoleRunnable {
                         aliases.addAll(Arrays.asList(strAliases.split("\\|")));
                     }
                     
-                    //if (geneSymbol.startsWith("MIR") && type.equalsIgnoreCase("miscRNA")) {
-                      //  line = buf.readLine();
-                      //  continue; // ignore miRNA; process seperately
-                    //}
+                    if (geneSymbol.toUpperCase().startsWith("MIR") && type.equalsIgnoreCase("ncRNA")) { //instead of miscRNA, in mouse the gene type of miRNAs is ncRNA
+                        line = buf.readLine();
+                        continue; // ignore miRNA; process separately
+                    }
                     
                     CanonicalGene gene = null;
                     if (!mainSymbol.equals("-")) {
@@ -197,7 +197,7 @@ public class ImportGeneData extends ConsoleRunnable {
 	            }
 	        }
 	        ProgressMonitor.logWarning("There were " +genesWithoutSymbolFromNomenClatureAuthority.keySet().size() + 
-	        		" genes names in this file without an official symbol from nomenclature authorty. Imported: " + nrImported + 
+	        		" genes names in this file without an official symbol from nomenclature authority. Imported: " + nrImported + 
 	        		", skipped (because of duplicate symbol entry or because symbol is an 'official symbol' of another gene): " + nrSkipped);
         }
         
