@@ -204,9 +204,12 @@ var StudyViewInitCharts = (function(){
             }else if(_attr_id === "PATIENT_ID") {
                 if(_keys.length !== Object.keys(dataArr).length) {
                     _studyDesc = "from " + _keys.length + " patients";
-                }
+				}
+            }else if(_attr_id === "OTHER_SAMPLE_ID") {
+				//skip other_sample_id
+				continue; 
             }else if(_dataType === "NUMBER"){
-                if(selectedCol(_attr_id) && _createdChartsNum < 21  && _keys.length > 1){
+                if(_createdChartsNum < 21  && _keys.length > 1){
                     bar.push(_attr[i]);
                 }
                 varType[_attr_id] = "bar";
@@ -232,7 +235,7 @@ var StudyViewInitCharts = (function(){
                 
             }else if(_dataType === "STRING"){
                 varType[_attr_id] = "pie";
-                if(selectedCol(_attr_id) && _createdChartsNum < 21){
+                if(_createdChartsNum < 21){
                     if (tableCharts.indexOf(_attr_id) !== -1) {
                         pie.unshift(_attr[i]);
                     } else if(_keys.length > 1){
@@ -954,12 +957,6 @@ var StudyViewInitCharts = (function(){
         var _result = _dimention.top(Infinity);
 
         StudyViewInitTopComponents.changeHeader(_result, numOfCases, removedChart);
-    }
-
-    //This filter is the same one which used in previous Google Charts Version,
-    //should be revised later.
-    function selectedCol(col) {
-        return col.toLowerCase().match(/(^age)|(gender)|(sex)|(darwin_vital_status)|(darwin_patient_age)|(os_status)|(os_months)|(dfs_status)|(dfs_months)|(race)|(ethnicity)|(.*type.*)|(.*site.*)|(.*grade.*)|(.*stage.*)|(histology)|(tumor_type)|(subtype)|(tumor_site)|(.*score.*)|(mutation_count)|(copy_number_alterations)|(sequenced)|(has_cna_data)|(sample_count_patient)/);
     }
 
     function redrawChartsAfterDeletion(){
