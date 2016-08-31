@@ -39,15 +39,7 @@ window.OQL = (function () {
 	if (alteration.alteration_type === "cna") {
 	    return alteration.constr_val;
 	} else if (alteration.alteration_type === "mut") {
-	    if (alteration.constr_rel) {
-		if (alteration.constr_type === "position") {
-		    return ["MUT",alteration.constr_rel,alteration.info.amino_acid,alteration.constr_val].join("");
-		} else {
-		    return ["MUT",alteration.constr_rel,alteration.constr_val].join("");
-		}
-	    } else {
-		return "MUT";
-	    }
+	    return "MUT" + (alteration.constr_rel ? alteration.constr_rel + alteration.constr_val : "");
 	} else if (alteration.alteration_type === "exp") {
 	    return "EXP" + alteration.constr_rel + alteration.constr_val;
 	} else if (alteration.alteration_type === "prot") {
