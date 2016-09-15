@@ -240,28 +240,64 @@ public class ImportGeneData extends ConsoleRunnable {
         BufferedReader buf = new BufferedReader(reader);
         String line;
         Set<String> genesNotFound = new HashSet<String>();
-        HashMap<Long, List<long[]>> geneLociMap = new HashMap<Long, List<long[]>>();
         ProgressMonitor.setCurrentMessage("\n\nUpdating gene lengths: \n\n"); //Display a message in the console
+        String currentEnsembl = new String();
+        List<long[]> loci = new ArrayList<long[]>();
+        int nrGenesUpdated = 0;
         
         //Iterate over the file and fill the hash map with the max and min values of each gene (start and end position)
         while ((line=buf.readLine()) != null) {
         	String parts[] = line.split("\t");
-            CanonicalGene gene = daoGeneOptimized.getNonAmbiguousGene(parts[3], parts[0], false); //Identify unambiguously the gene (with the symbol and the chromosome)
-        	if (gene==null) { //Report the genes that have not been unambiguously identified
-        		genesNotFound.add(parts[3]);
-                continue;
+        	if (parts[2].contains("exon") || parts[2].contains("CDS")) {
+	        	String info[] = parts[8].split(";");
+	        	String ensembl = new String();
+	        	String symbol = new String();
+	        	//Retrieve the ensembl ID
+	        	for (String i : info) {
+	        		if (i.contains("gene_id")) {
+	        			String j[] = i.split(" ");
+	        			i = j[1];
+	        			ensembl = i.replaceAll("\"", "");
+	        		}
+	        		else if (i.contains("gene_name")) {
+	        			String j[] = i.split(" ");
+	        			i = j[1];
+	        			symbol = i.replaceAll("\"", ""); 
+	        		}
+	        	}
+	            CanonicalGene currentGene = daoGeneOptimized.getNonAmbiguousGene(symbol, parts[0], false); //Identify unambiguously the gene (with the symbol and the chromosome)
+                if (currentGene==null) {
+                	genesNotFound.add(symbol);
+	                continue;
+                }
+                
+                if (currentEnsembl != ensembl) {
+                    if (currentEnsembl !=null) {
+                        int length = calculateGeneLength(loci);
+                        if (currentGene.getLength()!=0) {
+                        	String cytoband = currentGene.getCytoband();
+                        	String chromosome = cytoband.split("p|q")[0];
+                        	if (chromosome == parts[0]) {
+                        		currentGene.setLength(length);
+                        		nrGenesUpdated++;
+                        		ProgressMonitor.logWarning(symbol+" had already a length or there are multiple genes with the same Entrez ID on the same chromosome. In that case, only the last length will be stored.");
+                        	}
+                        	else {
+                        		System.err.println(symbol+" is found on multiple chromosomes, saving the length of the Entrez ID chromosome");
+                        	}
+                        } else {
+                            currentGene.setLength(length);
+                            nrGenesUpdated++;
+                        }
+                    }
+                    loci.clear();
+                    currentEnsembl = ensembl;
+                }
+                
+                loci.add(new long[]{Long.parseLong(parts[3]), Long.parseLong(parts[4])}); //Add the new positions
             }
-        	else {
-        		Long geneId = gene.getEntrezGeneId(); //Retrieve the Entrez Gene ID from gene
-        		List<long[]> list = geneLociMap.get(geneId);
-        		if (list == null) {
-        			list = new ArrayList<long[]>(); //Create new array
-        			geneLociMap.put(geneId, list); //couple it to the geneId
-        		}
-        		list.add(new long[]{Long.parseLong(parts[1]), Long.parseLong(parts[2])}); //Add the new positions
-        	}
         }
-        
+	    
     	//Report non ambiguous genes
     	if (genesNotFound.size() > 0) {
     		String genesString = genesNotFound.toString();
@@ -270,23 +306,7 @@ public class ImportGeneData extends ConsoleRunnable {
     			genesString = genesString.substring(0, 100) + "...";
             ProgressMonitor.logWarning("Genes not found, or symbol found to be ambiguous ("+ genesNotFound.size() +" genes in total): " + genesString);
     	}
-        
-        //Calculate the length for each gene and update genes
-        int nrGenesUpdated = 0;
-        for (Long key : geneLociMap.keySet()) { //Get the keys and iterate over them
-        	List<long[]> exons = geneLociMap.get(key); //Get the values
-        	int length = calculateGeneLength(exons);
-        	CanonicalGene gene = daoGeneOptimized.getGene(key);
-        	//only update if length is different:
-        	if (gene.getLength() != length) {
-	        	gene.setLength(length);
-	            daoGeneOptimized.updateGene(gene);
-	            nrGenesUpdated++;
-        	}
-        }
         ProgressMonitor.setCurrentMessage("\n\nUpdated length info for " + nrGenesUpdated + " genes\n");
-
-        
     }
     
 
@@ -358,7 +378,7 @@ public class ImportGeneData extends ConsoleRunnable {
 	 		parser.accepts( "genes", "ncbi genes file" ).withRequiredArg().describedAs( "ncbi_genes.txt" ).ofType( String.class );
 	 		parser.accepts( "supp-genes", "alternative genes file" ).withRequiredArg().describedAs( "supp-genes.txt" ).ofType( String.class );
 	 		parser.accepts( "microrna", "microrna file" ).withRequiredArg().describedAs( "microrna.txt" ).ofType( String.class );
-	 		parser.accepts( "exon-loci", "exon loci file for calculating and storing gene lengths" ).withRequiredArg().describedAs( "all_exon_loci.bed" ).ofType( String.class );
+	 		parser.accepts( "gtf", "gtf file for calculating and storing gene lengths" ).withRequiredArg().describedAs( "gencode.<version>.annotation.gtf" ).ofType( String.class );
 	
 	 		String progName = "importGenes";
 	 		OptionSet options = null;
@@ -386,7 +406,7 @@ public class ImportGeneData extends ConsoleRunnable {
 		        ProgressMonitor.setMaxValue(numLines);
 		        MySQLbulkLoader.bulkLoadOn();
 		        ImportGeneData.importData(geneFile);
-		        MySQLbulkLoader.flushAll(); //Gene and gene_alias should be updated before calculating gene length (exon-loci)!
+		        MySQLbulkLoader.flushAll(); //Gene and gene_alias should be updated before calculating gene length (gtf)!
 			}
 	        
 	        if(options.has("supp-genes")) {
@@ -407,8 +427,8 @@ public class ImportGeneData extends ConsoleRunnable {
 	            ImportMicroRNAIDs.importData(miRNAFile);
 	        }
 	        
-	        if(options.has("exon-loci")) {
-	            File lociFile = new File((String) options.valueOf("exon-loci"));
+	        if(options.has("gtf")) {
+	            File lociFile = new File((String) options.valueOf("gtf"));
 	            System.out.println("Reading loci data from:  " + lociFile.getAbsolutePath());
 	            numLines = FileUtil.getNumLines(lociFile);
 	            System.out.println(" --> total number of lines:  " + numLines);
