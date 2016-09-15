@@ -241,27 +241,31 @@ public class ImportGeneData extends ConsoleRunnable {
         String line;
         Set<String> genesNotFound = new HashSet<String>();
         ProgressMonitor.setCurrentMessage("\n\nUpdating gene lengths: \n\n"); //Display a message in the console
-        String currentEnsembl = new String();
+        String geneEnsembl = "";
+    	String exonEnsembl = "";
+    	String symbol = null;
         List<long[]> loci = new ArrayList<long[]>();
         int nrGenesUpdated = 0;
         
         //Iterate over the file and fill the hash map with the max and min values of each gene (start and end position)
         while ((line=buf.readLine()) != null) {
+        	if(line.charAt(0) == '#'){
+        		continue;
+        	}
         	String parts[] = line.split("\t");
         	if (parts[2].contains("exon") || parts[2].contains("CDS")) {
 	        	String info[] = parts[8].split(";");
-	        	String ensembl = new String();
-	        	String symbol = new String();
+
 	        	//Retrieve the ensembl ID
 	        	for (String i : info) {
 	        		if (i.contains("gene_id")) {
 	        			String j[] = i.split(" ");
 	        			i = j[1];
-	        			ensembl = i.replaceAll("\"", "");
+	        			exonEnsembl = i.replaceAll("\"", "");
 	        		}
 	        		else if (i.contains("gene_name")) {
 	        			String j[] = i.split(" ");
-	        			i = j[1];
+	        			i = j[2];
 	        			symbol = i.replaceAll("\"", ""); 
 	        		}
 	        	}
@@ -271,29 +275,38 @@ public class ImportGeneData extends ConsoleRunnable {
 	                continue;
                 }
                 
-                if (currentEnsembl != ensembl) {
-                    if (currentEnsembl !=null) {
+                if (!geneEnsembl.equals(exonEnsembl)) {
+                    if (!geneEnsembl.equals("")) {
                         int length = calculateGeneLength(loci);
                         if (currentGene.getLength()!=0) {
                         	String cytoband = currentGene.getCytoband();
-                        	String chromosome = cytoband.split("p|q")[0];
-                        	if (chromosome == parts[0]) {
+                        	if (cytoband == null) {
                         		currentGene.setLength(length);
+                        		daoGeneOptimized.updateGene(currentGene);
                         		nrGenesUpdated++;
-                        		ProgressMonitor.logWarning(symbol+" had already a length or there are multiple genes with the same Entrez ID on the same chromosome. In that case, only the last length will be stored.");
+                        		ProgressMonitor.logWarning(symbol+" has no cytoband information, length saved.");	
                         	}
                         	else {
-                        		System.err.println(symbol+" is found on multiple chromosomes, saving the length of the Entrez ID chromosome");
+	                        	String chromosome = "chr"+cytoband.split("p|q")[0];
+	                        	if (chromosome.equals(parts[0])) {
+	                        		currentGene.setLength(length);
+	                        		daoGeneOptimized.updateGene(currentGene);
+	                        		nrGenesUpdated++;
+	                        		ProgressMonitor.logWarning(symbol+" had already a length or there are multiple genes with the same Entrez ID on the same chromosome. In that case, only the last length will be stored.");
+	                        	}
+	                        	else {
+	                        		System.err.println(symbol+" is found on multiple chromosomes, saving the length of the Entrez ID chromosome");
+	                        	}	
                         	}
                         } else {
                             currentGene.setLength(length);
+                            daoGeneOptimized.updateGene(currentGene);
                             nrGenesUpdated++;
                         }
                     }
                     loci.clear();
-                    currentEnsembl = ensembl;
+                    geneEnsembl = exonEnsembl;
                 }
-                
                 loci.add(new long[]{Long.parseLong(parts[3]), Long.parseLong(parts[4])}); //Add the new positions
             }
         }
