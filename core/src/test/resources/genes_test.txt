@@ -1,3 +1,4 @@
+#tax_id	GeneID	Symbol	LocusTag	Synonyms	dbXrefs	chromosome	map_location	description	type_of_gene	Symbol_from_nomenclature_authority	Full_name_from_nomenclature_authority	Nomenclature_status	Other_designations	Modification_date
 9606	1	A1BG	-	A1B|ABG|GAB|HYST2477	HGNC:5|MIM:138670|Ensembl:ENSG00000121410|HPRD:00726	19	19q13.4	alpha-1-B glycoprotein	protein-coding	A1BG	alpha-1-B glycoprotein	O	alpha-1B-glycoprotein	20121230
 9606	2	A2M	-	A2MD|CPAMD5|FWP007|S863-7	HGNC:7|MIM:103950|Ensembl:ENSG00000175899|HPRD:00072|Vega:OTTHUMG00000150267	12	12p13.31	alpha-2-macroglobulin	protein-coding	A2M	alpha-2-macroglobulin	O	C3 and PZP-like alpha-2-macroglobulin domain-containing protein 5|alpha-2-M	20121230
 9606	3	A2MP1	-	A2MP	HGNC:8	12	12p13.31	alpha-2-macroglobulin pseudogene 1	pseudo	A2MP1	alpha-2-macroglobulin pseudogene 1	O	-	20121230
