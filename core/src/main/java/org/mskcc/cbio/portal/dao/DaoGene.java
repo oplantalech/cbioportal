@@ -73,8 +73,7 @@ final class DaoGene {
     }
 
     /**
-     * Update Gene Record in the Database. It will also replace this 
-     * gene's aliases with the ones found in the given gene object.
+     * Update Gene Record in the Database. 
      */
     public static int updateGene(CanonicalGene gene) throws DaoException {
         Connection con = null;
@@ -88,8 +87,6 @@ final class DaoGene {
             // input file and other fields based on another input file):
             setBulkLoadAtEnd = MySQLbulkLoader.isBulkLoad();
             MySQLbulkLoader.bulkLoadOff();
-            //delete aliases first:
-            deleteGeneAlias(gene.getEntrezGeneId());
             
             int rows = 0;
             con = JdbcUtil.getDbConnection(DaoGene.class);
@@ -104,8 +101,6 @@ final class DaoGene {
             if (rows != 1) {
                 ProgressMonitor.logWarning("No change for " + gene.getEntrezGeneId() + " " + gene.getHugoGeneSymbolAllCaps() + "? Code " + rows);
             }
-            //add the current set of aliases:
-            rows += addGeneAliases(gene);
 
             return rows;
         } catch (SQLException e) {
@@ -207,6 +202,7 @@ final class DaoGene {
 
             return rows;
         } catch (SQLException e) {
+        	System.out.println("wrong: " + gene.getHugoGeneSymbolAllCaps());
             throw new DaoException(e);
         } finally {
             JdbcUtil.closeAll(DaoGene.class, con, pstmt, rs);
@@ -405,7 +401,9 @@ final class DaoGene {
      * @param entrezGeneId 
      */
     public static void deleteGene(long entrezGeneId) throws DaoException {
-        Connection con = null;
+        deleteGeneAlias(entrezGeneId);
+        
+    	Connection con = null;
         PreparedStatement pstmt = null;
         ResultSet rs = null;
         try {
@@ -418,8 +416,6 @@ final class DaoGene {
         } finally {
             JdbcUtil.closeAll(DaoGene.class, con, pstmt, rs);
         }
-        
-        deleteGeneAlias(entrezGeneId);
     }
     
     /**
