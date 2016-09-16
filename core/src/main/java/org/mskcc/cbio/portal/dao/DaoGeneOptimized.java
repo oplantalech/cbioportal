@@ -173,6 +173,7 @@ public class DaoGeneOptimized {
      * gene's aliases with the ones found in the given gene object.
      */
     public int updateGene(CanonicalGene gene)  throws DaoException {
+    	System.out.println("updating gene: "+ gene.getHugoGeneSymbolAllCaps());
         int ret = DaoGene.updateGene(gene);
         //recache:
         cacheGene(gene);
