@@ -113,11 +113,11 @@ public class TestImportGeneData {
             ImportGeneData.importGeneLength(file);
             CanonicalGene gene = daoGene.getNonAmbiguousGene("ABCA4", "chr1", false);
             assertEquals(370,gene.getLength());
-            
-            gene = daoGene.getNonAmbiguousGene("WASH7P", "chr1", false);
+
+            gene = daoGene.getNonAmbiguousGene("AACP", "chr8", false);
             assertEquals(16266,gene.getLength());
             
-            gene = daoGene.getNonAmbiguousGene("AP006222.2", "chr1", true);
+            gene = daoGene.getNonAmbiguousGene("AARS", "chr16", false);
             assertEquals(1162,gene.getLength());
         }
         else {
