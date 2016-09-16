@@ -252,7 +252,6 @@ public class ImportGeneData extends ConsoleRunnable {
     	Long currentStop;
     	
     	String parts[] = null;
-    	List<String> savedEnsembl = new ArrayList<String>();
         List<long[]> loci = new ArrayList<long[]>();
         int nrGenesUpdated = 0;
         CanonicalGene previousGene = null;
@@ -281,16 +280,14 @@ public class ImportGeneData extends ConsoleRunnable {
 	        			currentSymbol = j[2].replaceAll("\"", ""); 
 	        		}
 	        	}
-	        	
-	        	
+
 	        	/// Only in case of the first line
                 if (previousEnsembl.equals("")) { 
                 	previousEnsembl = currentEnsembl;
                 	previousSymbol = currentSymbol;
                 	previousChrom = currentChrom;
                 	loci.add(new long[]{currentStart, currentStop}); //Add the new positions	
-                }
-
+                }                
                 /// For all other lines
                 else {
 
@@ -319,40 +316,26 @@ public class ImportGeneData extends ConsoleRunnable {
                         	/// If there is no cytoband in the database, just write it (can also be an overwrite)
                         	if (cytoband == null) {
                         		previousGene.setLength(length);
-                        		System.out.print(previousSymbol + length + "No Cytoband\n");
                         		daoGeneOptimized.updateGene(previousGene);
                         		nrGenesUpdated++;
-                        		ProgressMonitor.logWarning(previousSymbol+" has no cytoband information, length saved.");
-                        		
-                        		if (savedEnsembl.contains(previousEnsembl)) {
-                            		ProgressMonitor.logWarning(previousEnsembl + "already is double in inputfile");	
-                        		} else {
-                            		savedEnsembl.add(previousEnsembl);
-                        		}
+                        		///ProgressMonitor.logWarning(previousSymbol+" has no cytoband information, length saved.");
                         	}
                         	
                         	/// If there is a cytoband in database, check if cytoband-chr matches input-chr
                         	else {
                             	String chromosome = "chr"+cytoband.split("p|q")[0];
-                            	if (chromosome.equals(parts[0])) {
+                            	if (chromosome.equals(previousChrom)) {
                             		previousGene.setLength(length);
-                            		System.out.print(previousSymbol + length + " Correct Cytoband\n");
                             		daoGeneOptimized.updateGene(previousGene);
-                            		//System.out.print("Updated Gene!\n");  		
                             		nrGenesUpdated++;
-                            		ProgressMonitor.logWarning(previousSymbol+" had already a length or there are multiple genes with the same Entrez ID on the same chromosome. In that case, only the last length will be stored.");
-                            		
-                            		if (savedEnsembl.contains(previousEnsembl)) {
-                                		ProgressMonitor.logWarning(previousEnsembl + "already is double in inputfile");	
-                            		} else {
-                                		savedEnsembl.add(previousEnsembl);
-                            		}
+                            		///ProgressMonitor.logWarning(previousSymbol+" had already a length or there are multiple genes with the same Entrez ID on the same chromosome. In that case, only the last length will be stored.");
                             	}
                             	/// If it doesn't match, don't write it
                             	else {
-                            		System.err.println(previousSymbol+" is found on multiple chromosomes, saving the length of the Entrez ID chromosome");
+                            		/// System.err.println(previousSymbol+" is found on multiple chromosomes, saving the length of the Entrez ID chromosome");
                             	}	
                             }
+                        }
                         /// At the end of writing a new gene, clear the loci and save the new ensembl.
                         loci.clear();
                         
@@ -360,7 +343,7 @@ public class ImportGeneData extends ConsoleRunnable {
                     	previousSymbol = currentSymbol;
                     	previousChrom = currentChrom;
                         loci.add(new long[]{currentStart, currentStop}); //Add the new positions
-                        }                             
+                                                     
                     }
                 }
             }
@@ -375,18 +358,33 @@ public class ImportGeneData extends ConsoleRunnable {
         /// If it does exist, write it
         else {
             int length = calculateGeneLength(loci);
-            previousGene.setLength(length);
-    		System.out.print(previousSymbol + length + "Last line\n");
-            daoGeneOptimized.updateGene(previousGene);
-            nrGenesUpdated++;
             
-    		if (savedEnsembl.contains(previousEnsembl)) {
-        		ProgressMonitor.logWarning(previousEnsembl + "already is double in inputfile");	
-    		} else {
-        		savedEnsembl.add(previousEnsembl);
-    		}
+          /// Obtain cytoband
+        	String cytoband = previousGene.getCytoband();
+        	
+        	/// If there is no cytoband in the database, just write it (can also be an overwrite)
+        	if (cytoband == null) {
+        		previousGene.setLength(length);
+        		daoGeneOptimized.updateGene(previousGene);
+        		nrGenesUpdated++;
+        		///ProgressMonitor.logWarning(previousSymbol+" has no cytoband information, length saved.");
+        	}
+        	
+        	/// If there is a cytoband in database, check if cytoband-chr matches input-chr
+        	else {
+            	String chromosome = "chr"+cytoband.split("p|q")[0];
+            	if (chromosome.equals(previousChrom)) {
+            		previousGene.setLength(length);
+            		daoGeneOptimized.updateGene(previousGene);
+            		nrGenesUpdated++;
+            		///ProgressMonitor.logWarning(previousSymbol+" had already a length or there are multiple genes with the same Entrez ID on the same chromosome. In that case, only the last length will be stored.");
+            	}
+            	/// If it doesn't match, don't write it
+            	else {
+            		/// System.err.println(previousSymbol+" is found on multiple chromosomes, saving the length of the Entrez ID chromosome");
+            	}	        	
+            }
         }
-        
  
     	//Report non ambiguous genes
     	if (genesNotFound.size() > 0) {
@@ -397,6 +395,8 @@ public class ImportGeneData extends ConsoleRunnable {
             ProgressMonitor.logWarning("Genes not found, or symbol found to be ambiguous ("+ genesNotFound.size() +" genes in total): " + genesString);
     	}
         ProgressMonitor.setCurrentMessage("\n\nUpdated length info for " + nrGenesUpdated + " genes\n");
+        
+        buf.close();
     }
     
 
