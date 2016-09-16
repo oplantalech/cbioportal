@@ -110,6 +110,8 @@ public class TestImportGeneData {
         if (geneLengthDataFilePath != null) {
             File file = new File(geneLengthDataFilePath.getFile());
             ImportGeneData.importGeneLength(file);
+            CanonicalGene gene = daoGene.getNonAmbiguousGene("SAMD11", "chr1", false);
+            assertEquals(0,gene.getLength());
 /*
             CanonicalGene gene = daoGene.getGene(10);
             assertEquals("NAT2", gene.getHugoGeneSymbolAllCaps());
