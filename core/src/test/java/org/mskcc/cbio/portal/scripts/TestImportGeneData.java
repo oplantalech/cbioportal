@@ -62,7 +62,7 @@ public class TestImportGeneData {
     //private String suppGeneDataFilename = null;
     private URL geneDataFilePath;
     private URL suppGeneDataFilePath;
-    private URL geneLengthDataFilePath;
+    private String geneLengthDataFilePath;
     
     @Before
     public void setUp() {
@@ -72,7 +72,7 @@ public class TestImportGeneData {
         //suppGeneDataFilename = home + File.separator + "core/target/test-classes/supp-genes.txt";
         geneDataFilePath = this.getClass().getResource("/genes_test.txt");
         suppGeneDataFilePath = this.getClass().getResource("/supp-genes.txt");
-        geneLengthDataFilePath = this.getClass().getResource("/gene-length_test.txt");
+        geneLengthDataFilePath = "src/test/resources/gene-length_test.txt";
 
     }
 
@@ -102,11 +102,16 @@ public class TestImportGeneData {
         else {
             throw new IllegalArgumentException("Cannot find test gene file, is PORTAL_HOME set?");
         }
-        
+    }
+    
+    @Test
+    public void testImportGeneLength() throws Exception {
+        DaoGeneOptimized daoGene = DaoGeneOptimized.getInstance();
+
         if (geneLengthDataFilePath != null) {
-            File file = new File(geneLengthDataFilePath.getFile());
+            File file = new File(geneLengthDataFilePath);
             ImportGeneData.importGeneLength(file);
-            CanonicalGene gene = daoGene.getNonAmbiguousGene("DDX11L1", "chr1", false);
+            CanonicalGene gene = daoGene.getNonAmbiguousGene("ABCA4", "chr1", false);
             assertEquals(370,gene.getLength());
             
             gene = daoGene.getNonAmbiguousGene("WASH7P", "chr1", false);
