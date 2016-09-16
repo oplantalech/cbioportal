@@ -62,6 +62,7 @@ public class TestImportGeneData {
     //private String suppGeneDataFilename = null;
     private URL geneDataFilePath;
     private URL suppGeneDataFilePath;
+    private URL geneLengthDataFilePath;
     
     @Before
     public void setUp() {
@@ -71,6 +72,7 @@ public class TestImportGeneData {
         //suppGeneDataFilename = home + File.separator + "core/target/test-classes/supp-genes.txt";
         geneDataFilePath = this.getClass().getResource("/genes_test.txt");
         suppGeneDataFilePath = this.getClass().getResource("/supp-genes.txt");
+        geneLengthDataFilePath = this.getClass().getResource("/gene-length_test.txt");
 
     }
 
@@ -100,4 +102,29 @@ public class TestImportGeneData {
             throw new IllegalArgumentException("Cannot find test gene file, is PORTAL_HOME set?");
         }
     }
+    
+    public void testImportGeneLengthData() throws Exception {
+        DaoGeneOptimized daoGene = DaoGeneOptimized.getInstance();
+        ProgressMonitor.setConsoleMode(false);
+        
+        if (geneLengthDataFilePath != null) {
+            File file = new File(geneLengthDataFilePath.getFile());
+            ImportGeneData.importGeneLength(file);
+/*
+            CanonicalGene gene = daoGene.getGene(10);
+            assertEquals("NAT2", gene.getHugoGeneSymbolAllCaps());
+            gene = daoGene.getGene(15);
+            assertEquals("AANAT", gene.getHugoGeneSymbolAllCaps());
+
+            gene = daoGene.getGene("ABCA3");
+            assertEquals(21, gene.getEntrezGeneId());
+            */
+            
+            
+        }
+        else {
+            throw new IllegalArgumentException("Cannot find test gene length file, is PORTAL_HOME set?");
+        }
+    }
+    
 }

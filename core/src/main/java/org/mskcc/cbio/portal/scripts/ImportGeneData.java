@@ -233,7 +233,7 @@ public class ImportGeneData extends ConsoleRunnable {
      * @throws IOException
      * @throws DaoException
      */
-    private static void importGeneLength(File geneFile) throws IOException, DaoException {
+    public static void importGeneLength(File geneFile) throws IOException, DaoException {
     	//Set the variables needed for the method
         DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
         FileReader reader = new FileReader(geneFile);
@@ -244,6 +244,7 @@ public class ImportGeneData extends ConsoleRunnable {
         String geneEnsembl = "";
     	String exonEnsembl = "";
     	String symbol = null;
+    	List<String> savedEnsembl = new ArrayList<String>();
         List<long[]> loci = new ArrayList<long[]>();
         int nrGenesUpdated = 0;
         
@@ -260,13 +261,11 @@ public class ImportGeneData extends ConsoleRunnable {
 	        	for (String i : info) {
 	        		if (i.contains("gene_id")) {
 	        			String j[] = i.split(" ");
-	        			i = j[1];
-	        			exonEnsembl = i.replaceAll("\"", "");
+	        			exonEnsembl = j[1].replaceAll("\"", "");
 	        		}
 	        		else if (i.contains("gene_name")) {
 	        			String j[] = i.split(" ");
-	        			i = j[2];
-	        			symbol = i.replaceAll("\"", ""); 
+	        			symbol = j[2].replaceAll("\"", ""); 
 	        		}
 	        	}
 	            CanonicalGene currentGene = daoGeneOptimized.getNonAmbiguousGene(symbol, parts[0], false); //Identify unambiguously the gene (with the symbol and the chromosome)
@@ -284,7 +283,13 @@ public class ImportGeneData extends ConsoleRunnable {
                         		currentGene.setLength(length);
                         		daoGeneOptimized.updateGene(currentGene);
                         		nrGenesUpdated++;
-                        		ProgressMonitor.logWarning(symbol+" has no cytoband information, length saved.");	
+                        		//ProgressMonitor.logWarning(symbol+" has no cytoband information, length saved.");
+                        		
+                        		if (savedEnsembl.contains(geneEnsembl)) {
+                            		ProgressMonitor.logWarning(geneEnsembl + "already is double in inputfile");	
+                        		} else {
+                            		savedEnsembl.add(geneEnsembl);
+                        		}
                         	}
                         	else {
 	                        	String chromosome = "chr"+cytoband.split("p|q")[0];
@@ -292,16 +297,28 @@ public class ImportGeneData extends ConsoleRunnable {
 	                        		currentGene.setLength(length);
 	                        		daoGeneOptimized.updateGene(currentGene);
 	                        		nrGenesUpdated++;
-	                        		ProgressMonitor.logWarning(symbol+" had already a length or there are multiple genes with the same Entrez ID on the same chromosome. In that case, only the last length will be stored.");
+	                        		//ProgressMonitor.logWarning(symbol+" had already a length or there are multiple genes with the same Entrez ID on the same chromosome. In that case, only the last length will be stored.");
+	                        		
+	                        		if (savedEnsembl.contains(geneEnsembl)) {
+	                            		ProgressMonitor.logWarning(geneEnsembl + "already is double in inputfile");	
+	                        		} else {
+	                            		savedEnsembl.add(geneEnsembl);
+	                        		}
 	                        	}
 	                        	else {
-	                        		System.err.println(symbol+" is found on multiple chromosomes, saving the length of the Entrez ID chromosome");
+	                        		//System.err.println(symbol+" is found on multiple chromosomes, saving the length of the Entrez ID chromosome");
 	                        	}	
                         	}
                         } else {
                             currentGene.setLength(length);
                             daoGeneOptimized.updateGene(currentGene);
                             nrGenesUpdated++;
+                            
+                    		if (savedEnsembl.contains(geneEnsembl)) {
+                        		ProgressMonitor.logWarning(geneEnsembl + "already is double in inputfile");	
+                    		} else {
+                        		savedEnsembl.add(geneEnsembl);
+                    		}
                         }
                     }
                     loci.clear();
