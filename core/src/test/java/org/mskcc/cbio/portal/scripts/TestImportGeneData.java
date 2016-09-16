@@ -98,35 +98,25 @@ public class TestImportGeneData {
             gene = daoGene.getGene("ABCA3");
             assertEquals(21, gene.getEntrezGeneId());
         }
+        
         else {
             throw new IllegalArgumentException("Cannot find test gene file, is PORTAL_HOME set?");
         }
-    }
-    
-    public void testImportGeneLengthData() throws Exception {
-        DaoGeneOptimized daoGene = DaoGeneOptimized.getInstance();
-        ProgressMonitor.setConsoleMode(false);
         
         if (geneLengthDataFilePath != null) {
             File file = new File(geneLengthDataFilePath.getFile());
             ImportGeneData.importGeneLength(file);
-            CanonicalGene gene = daoGene.getNonAmbiguousGene("SAMD11", "chr1", false);
-            assertEquals(0,gene.getLength());
-/*
-            CanonicalGene gene = daoGene.getGene(10);
-            assertEquals("NAT2", gene.getHugoGeneSymbolAllCaps());
-            gene = daoGene.getGene(15);
-            assertEquals("AANAT", gene.getHugoGeneSymbolAllCaps());
-
-            gene = daoGene.getGene("ABCA3");
-            assertEquals(21, gene.getEntrezGeneId());
-            */
+            CanonicalGene gene = daoGene.getNonAmbiguousGene("DDX11L1", "chr1", false);
+            assertEquals(370,gene.getLength());
             
+            gene = daoGene.getNonAmbiguousGene("WASH7P", "chr1", false);
+            assertEquals(16266,gene.getLength());
             
+            gene = daoGene.getNonAmbiguousGene("AP006222.2", "chr1", true);
+            assertEquals(1162,gene.getLength());
         }
         else {
             throw new IllegalArgumentException("Cannot find test gene length file, is PORTAL_HOME set?");
         }
     }
-    
 }
