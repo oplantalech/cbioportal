@@ -240,12 +240,11 @@ public class ImportGeneData extends ConsoleRunnable {
     
     public static void importGeneLength(File geneFile) throws IOException, DaoException {
     	//Set the variables needed for the method
-        DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
         FileReader reader = new FileReader(geneFile);
         BufferedReader buf = new BufferedReader(reader);
         String line;
-        Set<String> genesNotFound = new HashSet<String>();
         ProgressMonitor.setCurrentMessage("\nUpdating gene lengths... \n"); //Display a message in the console
+        boolean geneUpdated = false;
         
         String previousEnsembl = "";
     	String currentEnsembl = "";
@@ -259,7 +258,6 @@ public class ImportGeneData extends ConsoleRunnable {
     	String parts[] = null;
         List<long[]> loci = new ArrayList<long[]>();
         int nrGenesUpdated = 0;
-        CanonicalGene previousGene = null;
         
         //Iterate over the file and fill the hash map with the max and min values of each gene (start and end position)
         while ((line=buf.readLine()) != null) {
@@ -303,8 +301,10 @@ public class ImportGeneData extends ConsoleRunnable {
                     }	
                     /// If there is a switch
                     else {
-
-                    	updateLength()
+                    	geneUpdated = updateLength(previousSymbol, previousChrom, loci);
+                    	if (geneUpdated) {
+                    		nrGenesUpdated++;
+                    	}
                         /// At the end of writing a new gene, clear the loci and save the new ensemblID.
                         loci.clear();
                         
@@ -319,88 +319,63 @@ public class ImportGeneData extends ConsoleRunnable {
       
         /// Write the last gene
         /// First check if the gene exists in the database
-        previousGene = daoGeneOptimized.getNonAmbiguousGene(previousSymbol, previousChrom, false); //Identify unambiguously the gene (with the symbol and the chromosome)
-        if (previousGene==null) {
-        	genesNotFound.add(previousSymbol);
-        }
-        /// If it does exist, write it
-        else {
-            int length = calculateGeneLength(loci);
-            
-          /// Obtain cytoband
-        	String cytoband = previousGene.getCytoband();
-        	
-        	/// If there is no cytoband in the database, just write it (can also be an overwrite)
-        	if (cytoband == null) {
-        		previousGene.setLength(length);
-        		daoGeneOptimized.updateGene(previousGene);
-        		nrGenesUpdated++;
-        		///ProgressMonitor.logWarning(previousSymbol+" has no cytoband information, length saved.");
-        	}
-        	
-        	/// If there is a cytoband in database, check if cytoband-chr matches input-chr
-        	else {
-            	String chromosome = "chr"+cytoband.split("p|q")[0];
-            	if (chromosome.equals(previousChrom)) {//Update the length only if the chromosome matches
-            		previousGene.setLength(length);
-            		daoGeneOptimized.updateGene(previousGene);
-            		nrGenesUpdated++;
-            	}     	
-            }
-        }
- 
-    	//Report non ambiguous genes
-    	if (genesNotFound.size() > 0) {
-    		String genesString = genesNotFound.toString();
-    		// limit size:
-    		if (genesString.length() > 100)
-    			genesString = genesString.substring(0, 100) + "...";
-            ProgressMonitor.logWarning("Genes not found, or symbol found to be ambiguous ("+ genesNotFound.size() +" genes in total): " + genesString);
+        geneUpdated = updateLength(previousSymbol, previousChrom, loci);
+    	if (geneUpdated) {
+    		nrGenesUpdated++;
     	}
+ 
         ProgressMonitor.setCurrentMessage("Updated length info for " + nrGenesUpdated + " genes\n");
         
         buf.close();
     }
     
-    public class updateLength(String previousSymbol, String previousChrom, List<long[]> loci, int nrGenesUpdated, Set<String> genesNotFound) throws IOException, DaoException {
-    	private
+    /**
+     * This method receives a symbol, a chromosome and a list of loci (should be from the same gene), and with that it retrieves the Symbol of the gene and it calculates the length
+     * of all its exons contained in loci. If the Symbol is non-ambiguous, or the chromosome reported does not match the cytoband of the database gene, then length is not updated.
+     * The method reports a boolean stating if the gene length has been updated or not.
+     * 
+     * @param symbol
+     * @param chromosome
+     * @param loci
+     * @return
+     * @throws IOException
+     * @throws DaoException
+     */
+    public static boolean updateLength(String symbol, String chromosome, List<long[]> loci) throws IOException, DaoException {
     	DaoGeneOptimized daoGeneOptimized = DaoGeneOptimized.getInstance();
+    	boolean lengthUpdated = false;
     	/// Check if the gene is in the database
-    	CanonicalGene previousGene = daoGeneOptimized.getNonAmbiguousGene(previousSymbol, previousChrom, false); //Identify unambiguously the gene (with the symbol and the chromosome)
+    	CanonicalGene gene = daoGeneOptimized.getNonAmbiguousGene(symbol, chromosome, false); //Identify unambiguously the gene (with the symbol and the chromosome)
     	
     	/// If it's not in the database, don't add it
-        if (previousGene==null) {
-        	genesNotFound.add(previousSymbol);
-        }
-        else {
+        if (!(gene==null)) {
         	/// Calc length
             int length = calculateGeneLength(loci);
             
             /// Obtain cytoband
-        	String cytoband = previousGene.getCytoband();
+        	String cytoband = gene.getCytoband();
         	
         	/// If there is no cytoband in the database, just write it (can also be an overwrite)
         	if (cytoband == null) {
-        		previousGene.setLength(length);
-        		daoGeneOptimized.updateGene(previousGene);
-        		nrGenesUpdated++;
+        		gene.setLength(length);
+        		daoGeneOptimized.updateGene(gene);
+        		lengthUpdated = true;
         	}
         	
         	/// If there is a cytoband in database, check if cytoband-chr matches input-chr
         	else {
-            	String chromosome = "chr"+cytoband.split("p|q")[0];
-            	if (chromosome.equals(previousChrom)) { //Update the length only if the chromosome matches
-            		previousGene.setLength(length);
-            		daoGeneOptimized.updateGene(previousGene);
-            		nrGenesUpdated++;
+            	String cbChr = "chr"+cytoband.split("p|q")[0];
+            	if (cbChr.equals(chromosome)) { //Update the length only if the chromosome matches
+            		gene.setLength(length);
+            		daoGeneOptimized.updateGene(gene);
+            		lengthUpdated = true;
             	}
             	else {
             		ProgressMonitor.logWarning("Cytoband does not match, gene not saved (likely another version of gene in gtf has correct chr and is saved");
             	}
             }
         }
-        return nrGenesUpdated;
-		return genesNotFound;
+        return lengthUpdated;
     }
 
     /**
