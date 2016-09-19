@@ -107,7 +107,8 @@ public class TestImportGeneData {
     @Test
     public void testImportGeneLength() throws Exception {
         DaoGeneOptimized daoGene = DaoGeneOptimized.getInstance();
-
+        //run import gene data (this test depends on it):
+        testImportGeneData();
         if (geneLengthDataFilePath != null) {
             File file = new File(geneLengthDataFilePath);
             ImportGeneData.importGeneLength(file);
