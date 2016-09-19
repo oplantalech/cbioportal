@@ -112,13 +112,19 @@ public class TestImportGeneData {
             File file = new File(geneLengthDataFilePath);
             ImportGeneData.importGeneLength(file);
             CanonicalGene gene = daoGene.getNonAmbiguousGene("ABCA4", "chr1", false);
-            assertEquals(370,gene.getLength());
+            assertEquals(372,gene.getLength());
 
             gene = daoGene.getNonAmbiguousGene("AACP", "chr8", false);
-            assertEquals(16266,gene.getLength());
+            assertEquals(16267,gene.getLength());
             
             gene = daoGene.getNonAmbiguousGene("AARS", "chr16", false);
-            assertEquals(1162,gene.getLength());
+            assertEquals(1163,gene.getLength());
+            
+            gene = daoGene.getNonAmbiguousGene("AGER", "chr6", false);
+            assertEquals(1001,gene.getLength());
+            
+            gene = daoGene.getNonAmbiguousGene("MED28P8", "chr4", false);
+            assertEquals(201,gene.getLength());
         }
         else {
             throw new IllegalArgumentException("Cannot find test gene length file, is PORTAL_HOME set?");
