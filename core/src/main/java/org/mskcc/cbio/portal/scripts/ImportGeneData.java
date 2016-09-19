@@ -330,8 +330,8 @@ public class ImportGeneData extends ConsoleRunnable {
     }
     
     /**
-     * This method receives a symbol, a chromosome and a list of loci (should be from the same gene), and with that it retrieves the Symbol of the gene and it calculates the length
-     * of all its exons contained in loci. If the Symbol is non-ambiguous, or the chromosome reported does not match the cytoband of the database gene, then length is not updated.
+     * This method receives a symbol, a chromosome and a list of loci (should be from the same gene), and with that it retrieves the database gene and it calculates the length
+     * of all its exons contained in loci. If the symbol is non-ambiguous, or the chromosome reported does not match the cytoband of the database gene, then length is not updated.
      * The method reports a boolean stating if the gene length has been updated or not.
      * 
      * @param symbol
@@ -371,7 +371,7 @@ public class ImportGeneData extends ConsoleRunnable {
             		lengthUpdated = true;
             	}
             	else {
-            		ProgressMonitor.logWarning("Cytoband does not match, gene not saved (likely another version of gene in gtf has correct chr and is saved");
+            		ProgressMonitor.logWarning("Cytoband does not match, gene not saved (likely another version of gene in gtf has correct chr and is saved)");
             	}
             }
         }
