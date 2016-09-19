@@ -48,8 +48,8 @@ import cbioportal_common
 
 # Only supported reference genome build number and name
 # nb: keep this in synch with MutationDataUtils.getNcbiBuild
-NCBI_BUILD_NUMBER = 37
-GENOMIC_BUILD_NAME = 'hg19'
+NCBI_BUILD_NUMBER = 38 #Mouse
+GENOMIC_BUILD_NAME = 'GRCm38' #Mouse
 
 # study-specific globals
 DEFINED_SAMPLE_IDS = None
@@ -1106,7 +1106,7 @@ class MutationsExtendedValidator(Validator):
         if value != '':
             # based on MutationDataUtils.getNcbiBuild
             # TODO - make the supported build version a Portal property
-            if value not in [str(NCBI_BUILD_NUMBER), GENOMIC_BUILD_NAME, 'GRCh'+str(NCBI_BUILD_NUMBER)]:
+            if value not in [str(NCBI_BUILD_NUMBER), GENOMIC_BUILD_NAME, 'GRCm'+str(NCBI_BUILD_NUMBER)]: #Changed to mouse
                 return False
         return True
     

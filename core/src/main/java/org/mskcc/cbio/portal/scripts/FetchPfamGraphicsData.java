@@ -48,7 +48,11 @@ import org.mskcc.cbio.portal.util.ProgressMonitor;
  */
 public class FetchPfamGraphicsData
 {
+<<<<<<< HEAD
 	public static final String URL_PREFIX = "http://pfam.xfam.org/protein/";
+=======
+	public static final String URL_PREFIX = "http://pfam.xfam.org/protein/"; //new URL
+>>>>>>> mouse_master
 	public static final String URL_SUFFIX = "/graphic";
 
 	/**
@@ -73,7 +77,7 @@ public class FetchPfamGraphicsData
 		// 3. populate key set if incremental option is selected
 		Set<String> keySet = initKeySet(outputFilename, incremental);
                 
-                Set<String> uniprotAccs = ImportUniProtIdMapping.getSwissProtAccessionHuman();
+                Set<String> uniprotAccs = ImportUniProtIdMapping.getSwissProtAccessionMouse(); //Change it to mouse
                 
                 ProgressMonitor.setMaxValue(uniprotAccs.size());
 
